@@ -29,3 +29,9 @@ data/*.db
 *api_key*
 *api-id*
 *api-hash*
+/python/hemagon/loaded_data/
+
+# Worktrees
+.worktrees/
+worktrees/
+/tmp/

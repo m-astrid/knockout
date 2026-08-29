@@ -1,50 +1,63 @@
 version: '3.8'
 
 services:
-  api:
-    build: ./docker/api
-    ports:
-      - "50051:50051"
-    volumes:
-      - ./data:/data
-    environment:
-      - OWNER_TELEGRAM_ID=${OWNER_TELEGRAM_ID:-}
-      - DB_PATH=/data/fighters.db
-      - AI_SERVICE_URL=http://python-ai:8000
-      - HEMAGON_MCP_URL=http://hemagon-mcp:8080
-    depends_on:
-      - python-ai
-
-  bot:
-    build: ./docker/bot
-    environment:
-      - API_ADDR=api:50051
-      - TELEGRAM_BOT_TOKEN=${TELEGRAM_BOT_TOKEN:-}
-      - OWNER_TELEGRAM_ID=${OWNER_TELEGRAM_ID:-}
-    depends_on:
-      - api
+#  api:
+#    build: ./docker/api
+#    ports:
+#      - "50051:50051"
+#    volumes:
+#      - ./data:/data
+#    environment:
+#      - OWNER_TELEGRAM_ID=${OWNER_TELEGRAM_ID:-}
+#      - DB_PATH=/data/fighters.db
+#      - AI_SERVICE_URL=http://python-ai:8001
+#      - HEMAGON_API_URL=http://hemagon-api:8000
+#    depends_on:
+#      - python-ai
+#      - hemagon-api
+#
+#  bot:
+#    build: ./docker/bot
+#    environment:
+#      - API_ADDR=api:50051
+#      - TELEGRAM_BOT_TOKEN=${TELEGRAM_BOT_TOKEN:-}
+#      - OWNER_TELEGRAM_ID=${OWNER_TELEGRAM_ID:-}
+#    depends_on:
+#      - api
 
   python-ai:
-    build: ./docker/python/ai-service
+    build:
+      context: .
+      dockerfile: ./docker/python/ai-service/Dockerfile
+    env_file:
+      - .env
+    ports:
+      - "8001:8001"
+    volumes:
+      - ./tmp/volumes/ai-service/loaded_data:/tmp/hemagon_data
+      - ./tmp/volumes/ai-service/db:/tmp/db
+    environment:
+      - HEMAGON_SCRAPPER_URL=http://hemagon-api:8000
+      - AI_SERVICE_DB_PATH=/tmp/db/ai-service.db
+    depends_on:
+      - hemagon-api
+
+  hemagon-api:
+    build:
+      context: .
+      dockerfile: ./docker/python/hemagon/Dockerfile
     ports:
       - "8000:8000"
-    environment:
-      - ANTHROPIC_API_KEY=${ANTHROPIC_API_KEY:-}
-      - OPENAI_API_KEY=${OPENAI_API_KEY:-}
-      - HEMAGON_MCP_URL=http://hemagon-mcp:8080
+    volumes:
+      - ./tmp/volumes/ai-service/loaded_data:/tmp/hemagon_data
 
-  hemagon-mcp:
-    build: ./docker/python/mcp/hemagon
-    ports:
-      - "8081:8080"
-
-  vk-mcp:
-    build: ./docker/python/mcp/vk
-    ports:
-      - "8082:8080"
-    environment:
-      - VK_ACCESS_TOKEN=${VK_ACCESS_TOKEN:-}
-      - VK_GROUP_ID=${VK_GROUP_ID:-}
+#  vk-mcp:
+#    build: ./docker/python/mcp/vk
+#    ports:
+#      - "8082:8080"
+#    environment:
+#      - VK_ACCESS_TOKEN=${VK_ACCESS_TOKEN:-}
+#      - VK_GROUP_ID=${VK_GROUP_ID:-}
 
 volumes:
   data:
